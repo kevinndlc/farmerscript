@@ -115,9 +115,9 @@ export default {
           }
         })
       } else {
-        for (const tool of this.userTools) {
+        await Promise.all(this.userTools.map(async (tool) => {
           try {
-            const res = await this.wax.api.transact({
+            await this.wax.api.transact({
             actions: [{
               account: 'farmersworld',
               name: 'repair',
@@ -134,7 +134,6 @@ export default {
               blocksBehind: 3,
               expireSeconds: 30
             })
-            console.log(res);
           } catch (e) {
             this.$toast.error({
               component: CustomNotification,
@@ -144,7 +143,7 @@ export default {
               }
             })
           }
-        }
+        }))
 
         this.$toast.success({
           component: CustomNotification,
