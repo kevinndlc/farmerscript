@@ -71,6 +71,10 @@ export default {
   },
   async mounted() {
     await this.$store.dispatch('getUserRessources')
+
+    setInterval(async () => {
+      await this.$store.dispatch('getUserRessources')
+    }, 60000)
   }
 }
 </script>
