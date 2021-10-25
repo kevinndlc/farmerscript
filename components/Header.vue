@@ -25,8 +25,9 @@
           </div>
         </div>
         <div class="flex items-center flex-shrink-0">
-          <div v-if="userHasPaid && userRessources" class="hidden md:flex items-center">
-            <span class="text-xs md:text-base text-gray-600 font-medium md:mr-2">{{ userRessources.energy }} / {{ userRessources.max_energy }}</span>
+          <div v-if="userHasPaid && userRessources" class="hidden md:flex items-center" @mouseover="hoverNrj = true" @mouseout="hoverNrj = false">
+            <span v-if="!hoverNrj || nrjToRecover === 0" class="text-xs md:text-base text-gray-600 font-medium md:mr-2">{{ userRessources.energy }} / {{ userRessources.max_energy }}</span>
+            <button v-if="hoverNrj && nrjToRecover > 0" class="p-2 text-xs md:text-base text-gray-600 font-medium md:mr-2" @click="recoverNrj">RECOVER</button>
             <img class="h-8 w-8 mr-2" src="~assets/img/nrj.png" alt="Energy">
           </div>
           <span v-if="!userHasPaid && userBalance >= 0" class="text-gray-600 font-medium mr-2">{{ userBalance }} WAX</span>
@@ -43,7 +44,15 @@ import CustomNotification from '~/components/CustomNotification.vue'
 import { db, collection, getDocs } from '@/firebase/config'
 
 export default {
+  data() {
+    return {
+      hoverNrj: false
+    }
+  },
   computed: {
+    wax() {
+      return this.$store.state.wax
+    },
     userAccount() {
       return this.$store.state.userAccount
     },
@@ -67,6 +76,9 @@ export default {
     },
     userRessources() {
       return this.$store.state.userRessources
+    },
+    nrjToRecover() {
+      return this.userRessources.max_energy - this.userRessources.energy
     }
   },
   created() {
@@ -139,7 +151,60 @@ export default {
         this.$toast.error('Error fetching memberships')
         return false
       }
+    },
+    async recoverNrj() {
+      const priceInFood = this.nrjToRecover / 5
+
+      if (priceInFood > this.userFood) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Not enough food',
+            message: `You need ${priceInFood} FOOD to recover your energy`
+          }
+        })
+      } else {
+        try {
+          await this.wax.api.transact({
+          actions: [{
+            account: 'farmersworld',
+            name: 'recover',
+            authorization: [{
+              actor: this.wax.userAccount,
+              permission: 'active',
+            }],
+            data: {
+              owner: this.wax.userAccount,
+              energy_recovered: this.nrjToRecover
+            },
+          }]},
+          {
+            blocksBehind: 3,
+            expireSeconds: 30
+          })
+        } catch (e) {
+          this.$toast.error({
+            component: CustomNotification,
+            props: {
+              title: 'Unexpected error',
+              message: e.message
+            }
+          })
+        }
+
+        this.$toast.success({
+          component: CustomNotification,
+          props: {
+            title: 'Successfully recovered your energy',
+            message: `Your energy have been recovered for a total cost of ${priceInFood} FOOD`
+          }
+        })
+
+        setTimeout(async () => {
+          await this.$store.dispatch('getUserRessources')
+        }, 1000)
+      }
     }
-  },
+  }
 }
 </script>

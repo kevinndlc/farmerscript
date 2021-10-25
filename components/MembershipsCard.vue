@@ -39,7 +39,7 @@ export default {
   methods: {
     async handleClaimMbs(assetId, nbTry) {
       try {
-        await this.wax.api.transact({
+        const res = await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'mbsclaim',

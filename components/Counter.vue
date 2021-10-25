@@ -99,7 +99,7 @@ export default {
     handleClaim() {
       setTimeout(() => {
         this.$emit('claimed')
-      }, this.waitingSeconds * 1000)
+      }, this.waitingSeconds * 500)
     }
   },
 }

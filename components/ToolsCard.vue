@@ -49,7 +49,7 @@ export default {
   methods: {
     async handleClaimTool(assetId, nbTry) {
       try {
-        await this.wax.api.transact({
+        const res = await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'claim',
@@ -83,7 +83,9 @@ export default {
         })
       } catch(e) {
         if (nbTry < 3) {
-          await this.handleClaimTool(assetId, nbTry + 1)
+          setTimeout(async () => {
+            await this.handleClaimTool(assetId, nbTry + 1)
+          }, 500)
         } 
         return null
       }
