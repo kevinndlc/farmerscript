@@ -21,7 +21,7 @@ export default {
   created() {
     this.$store.dispatch('getWax', new waxjs.WaxJS({
       rpcEndpoint: 'https://chain.wax.io/',
-      tryAutoLogin: false
+      tryAutoLogin: true
     }))
   }
 }

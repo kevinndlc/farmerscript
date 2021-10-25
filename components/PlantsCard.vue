@@ -39,7 +39,7 @@ export default {
   methods: {
     async handleClaimCrop(assetId, nbTry) {
       try {
-        const res = await this.wax.api.transact({
+        await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'cropclaim',
@@ -57,8 +57,6 @@ export default {
           expireSeconds: 30
         })
 
-        console.log(res, assetId, nbTry);
-
         const claimingCrop = this.$store.state.userCrops.find(crop => crop.asset_id === assetId)
 
         this.$toast.success({
@@ -71,15 +69,7 @@ export default {
       } catch(e) {
         if (nbTry < 3) {
           await this.handleClaimCrop(assetId, nbTry + 1)
-        } else {
-          this.$toast.error({
-            component: CustomNotification,
-            props: {
-              title: 'Unexpected error',
-              message: e.message
-            }
-          })
-        }
+        } 
         return null
       }
 

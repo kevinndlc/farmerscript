@@ -49,7 +49,7 @@ export default {
   methods: {
     async handleClaimTool(assetId, nbTry) {
       try {
-        const res = await this.wax.api.transact({
+        await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'claim',
@@ -66,8 +66,6 @@ export default {
           blocksBehind: 3,
           expireSeconds: 30
         })
-
-        console.log(res, assetId, nbTry);
 
         const miningTool = this.$store.state.userTools.find(tool => tool.asset_id === assetId)
         
@@ -86,15 +84,7 @@ export default {
       } catch(e) {
         if (nbTry < 3) {
           await this.handleClaimTool(assetId, nbTry + 1)
-        } else {
-          this.$toast.error({
-            component: CustomNotification,
-            props: {
-              title: 'Unexpected error',
-              message: e.message
-            }
-          })
-        }
+        } 
         return null
       }
 

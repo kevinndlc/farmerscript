@@ -10,7 +10,7 @@
           {{ slide.times_claimed }}/{{ slide.required_claims }}
         </div>
         <img :data-index="index" :class="[{ current: isCurrent, onLeft: (leftIndex >= 0), onRight: (rightIndex >= 0)}, 'cursor-pointer']" :src="slide.img_url">
-        <Counter v-show="isCurrent" :timestamp="slide.next_availability" :autoclaim="autoclaim" @claimed="handleClaim(slide.asset_id)"/>
+        <Counter v-show="isCurrent" :timestamp="slide.next_availability" :autoclaim="autoclaim" :waitingSeconds="i+1" @claimed="handleClaim(slide.asset_id)"/>
       </template>
     </slide>
   </carousel-3d>

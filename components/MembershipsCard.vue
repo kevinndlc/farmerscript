@@ -39,7 +39,7 @@ export default {
   methods: {
     async handleClaimMbs(assetId, nbTry) {
       try {
-        const res = await this.wax.api.transact({
+        await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'mbsclaim',
@@ -56,7 +56,7 @@ export default {
           blocksBehind: 3,
           expireSeconds: 30
         })
-        console.log(res);
+
         const miningMbs = this.$store.state.userMbs.find(mbs => mbs.asset_id === assetId)
 
         const logClaim = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logmbsclaim')[0].act.data.amounts
@@ -74,15 +74,7 @@ export default {
       } catch(e) {
         if (nbTry < 3) {
           await this.handleClaimMbs(assetId, nbTry + 1)
-        } else {
-          this.$toast.error({
-            component: CustomNotification,
-            props: {
-              title: 'Unexpected error',
-              message: e.message
-            }
-          })
-        }
+        } 
         return null
       }
 

@@ -19,6 +19,10 @@ export default {
     autoclaim: {
       type: Boolean,
       default: false
+    },
+    waitingSeconds: {
+      type: Number,
+      default: 1
     }
   },
   data() {
@@ -93,7 +97,9 @@ export default {
       }, 1000)
     },
     handleClaim() {
-      this.$emit('claimed')
+      setTimeout(() => {
+        this.$emit('claimed')
+      }, this.waitingSeconds * 1000)
     }
   },
 }
