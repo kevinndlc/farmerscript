@@ -2,13 +2,14 @@
   <main class="relative min-h-screen w-screen">
     <Header />
     <Nuxt />
+    <Footer />
   </main>
 </template>
 
 <style scoped>
   main {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;
   }
 </style>
 

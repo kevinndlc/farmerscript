@@ -3,16 +3,17 @@
     <div class="flex justify-between items-center border-b-2 border-gray-400 mb-2 pb-2">
       <div class="flex items-center">
         <h2 class="text-gray-600 text-xl font-semibold">
-          <span>Tools ({{ userTools.length }})</span>
+          Tools ({{ userTools.length }})
         </h2>
-        <button v-if="sumToolsDurability" class="ml-2 text-sm text-primary hover:text-secondary font-bold" @click="repairAllTools">REPAIR ALL</button>
+        <button v-if="sumToolsDurability" class="ml-2 text-xs sm:text-sm text-primary hover:text-secondary font-bold" @click="repairAllTools">REPAIR ALL</button>
       </div>
       <div>
-        <MySwitch id="toggleTools" label="Auto Claim" :checked="autoClaimTools" @toggleSwitch="autoClaimTools = !autoClaimTools"/>
+        <MySwitch id="toggleTools" label="Auto Claim" :checked="autoClaimTools" @toggleSwitch="handleAutoClaimTools"/>
       </div>
     </div>
     <div>
       <Carousel :slides="userTools" :autoclaim="autoClaimTools" @claimAsset="handleClaimTool"/>
+      <Spinner v-if="claiming" />
     </div>
   </GlassCard>
 </template>
@@ -23,7 +24,9 @@ import CustomNotification from "~/components/CustomNotification.vue"
 export default {
   data() {
     return {
-      autoClaimTools: false
+      autoClaimTools: (localStorage.getItem('autoClaimTools') === 'true'),
+      claiming: false,
+      claimingAssets: []
     }
   },
   computed: {
@@ -47,7 +50,15 @@ export default {
     await this.$store.dispatch('getUserTools')
   },
   methods: {
-    async handleClaimTool(assetId, nbTry) {
+    handleAutoClaimTools() {
+      this.autoClaimTools = !this.autoClaimTools
+      localStorage.setItem('autoClaimTools', this.autoClaimTools)
+    },
+    async handleClaimTool(asset, nbTry) {
+      if (nbTry === 1) {
+        this.claimingAssets.push(asset.asset_id)
+        this.claiming = true
+      }
       try {
         const res = await this.wax.api.transact({
         actions: [{
@@ -59,7 +70,7 @@ export default {
           }],
           data: {
             owner: this.wax.userAccount,
-            asset_id: assetId
+            asset_id: asset.asset_id
           },
         }]},
         {
@@ -67,7 +78,7 @@ export default {
           expireSeconds: 30
         })
 
-        const miningTool = this.$store.state.userTools.find(tool => tool.asset_id === assetId)
+        const miningTool = this.$store.state.userTools.find(tool => tool.asset_id === asset.asset_id)
         
         const logClaim = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logclaim')[0].act.data.rewards
         const logBonus = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logbonus')[0].act.data.bonus_rewards
@@ -82,18 +93,32 @@ export default {
           })
         })
       } catch(e) {
-        if (nbTry < 3) {
-          setTimeout(async () => {
-            await this.handleClaimTool(assetId, nbTry + 1)
-          }, 500)
-        } 
-        return null
+        if (nbTry < 5) {
+          setTimeout(() => {
+            this.handleClaimTool(asset, nbTry + 1)
+          }, 3000)
+          return null
+        } else {
+          this.$toast.error({
+            component: CustomNotification,
+            props: {
+              title: 'Unexpected error',
+              message: e.message
+            }
+          })
+        }
       }
 
-      setTimeout(async () => {
-        await this.$store.dispatch('getUserRessources')
-        await this.$store.dispatch('getUserTools')
-      }, 1000)
+      this.claimingAssets.splice(this.claimingAssets.indexOf(asset.asset_id), 1)
+
+      if (this.claimingAssets.length === 0) {
+        this.claiming = false
+      }
+
+      setTimeout(() => {
+        this.$store.dispatch('getUserRessources')
+        this.$store.dispatch('getUserTools')
+      }, 1500)
     },
     async repairAllTools() {
       const priceInGold = this.sumToolsDurability / 5

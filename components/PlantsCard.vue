@@ -2,16 +2,17 @@
   <GlassCard v-if="userCrops.length > 0" class="rounded-xl w-full h-full p-4 pt-3 overflow-hidden">
     <div class="flex justify-between items-center border-b-2 border-gray-400 mb-2 pb-2">
       <div class="flex items-center">
-        <h2 class="flex items-end text-gray-600 text-xl font-semibold">
-          <span>Plants ({{ userCrops.length }})</span>
+        <h2 class="text-gray-600 text-xl font-semibold">
+          Plants ({{ userCrops.length }})
         </h2>
       </div>
       <div>
-        <MySwitch id="toggleCrops" label="Auto Claim" :checked="autoClaimCrops" @toggleSwitch="autoClaimCrops = !autoClaimCrops"/>
+        <MySwitch id="toggleCrops" label="Auto Claim" :checked="autoClaimCrops" @toggleSwitch="handleAutoClaimCrops"/>
       </div>
     </div>
-    <div>
+    <div :key="nbCrops">
       <Carousel :slides="userCrops" :autoclaim="autoClaimCrops" @claimAsset="handleClaimCrop"/>
+      <Spinner v-if="claiming" />
     </div>
   </GlassCard>
 </template>
@@ -22,7 +23,9 @@ import CustomNotification from "~/components/CustomNotification.vue"
 export default {
   data() {
     return {
-      autoClaimCrops: false
+      autoClaimCrops: (localStorage.getItem('autoClaimCrops') === 'true'),
+      claiming: false,
+      claimingAssets: []
     }
   },
   computed: {
@@ -31,15 +34,26 @@ export default {
     },
     userCrops() {
       return this.$store.state.userCrops
+    },
+    nbCrops() {
+      return this.userCrops.length
     }
   },
   async mounted() {
     await this.$store.dispatch('getUserCrops')
   },
   methods: {
-    async handleClaimCrop(assetId, nbTry) {
+    handleAutoClaimCrops() {
+      this.autoClaimCrops = !this.autoClaimCrops
+      localStorage.setItem('autoClaimCrops', this.autoClaimCrops)
+    },
+    async handleClaimCrop(asset, nbTry) {
+      if (nbTry === 1) {
+        this.claimingAssets.push(asset.asset_id)
+        this.claiming = true
+      }
       try {
-        await this.wax.api.transact({
+        const res = await this.wax.api.transact({
         actions: [{
           account: 'farmersworld',
           name: 'cropclaim',
@@ -49,7 +63,7 @@ export default {
           }],
           data: {
             owner: this.wax.userAccount,
-            crop_id: assetId
+            crop_id: asset.asset_id
           },
         }]},
         {
@@ -57,26 +71,52 @@ export default {
           expireSeconds: 30
         })
 
-        const claimingCrop = this.$store.state.userCrops.find(crop => crop.asset_id === assetId)
-
-        this.$toast.success({
-          component: CustomNotification,
-          props: {
-            title: `Successfully claimed your ${claimingCrop.name}`,
-            message: `It needs to be watered ${claimingCrop.required_claims - (claimingCrop.times_claimed + 1)} more times before you get your ${claimingCrop.name.replace(' Seed', '')}s`
-          }
-        })
+        console.log(res);
+        if (asset.times_claimed === asset.required_claims - 1) {
+          const nbRewards = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.act.name === 'mintasset').length
+          this.$toast.success({
+            component: CustomNotification,
+            props: {
+              title: `Successfully claimed your ${asset.name}`,
+              message: `You just obtained ${nbRewards} ${asset.name.replace(' Seed', '')}s`
+            }
+          })
+        } else {
+          this.$toast.success({
+            component: CustomNotification,
+            props: {
+              title: `Successfully claimed your ${asset.name}`,
+              message: `It needs to be watered ${asset.required_claims - (asset.times_claimed + 1)} more times before you get your ${asset.name.replace(' Seed', '')}s`
+            }
+          })
+        }
       } catch(e) {
-        if (nbTry < 3) {
-          await this.handleClaimCrop(assetId, nbTry + 1)
-        } 
-        return null
+        if (nbTry < 5) {
+          setTimeout(() => {
+            this.handleClaimCrop(asset, nbTry + 1)
+          }, 3000)
+          return null
+        } else {
+          this.$toast.error({
+            component: CustomNotification,
+            props: {
+              title: 'Unexpected error',
+              message: e.message
+            }
+          })
+        }
+      }
+
+      this.claimingAssets.splice(this.claimingAssets.indexOf(asset.asset_id), 1)
+
+      if (this.claimingAssets.length === 0) {
+        this.claiming = false
       }
 
       setTimeout(async () => {
         await this.$store.dispatch('getUserRessources')
         await this.$store.dispatch('getUserCrops')
-      }, 1000)
+      }, 1500)
     }
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-center w-full">
+  <div class="flex items-center justify-center">
     <label :for="id" class="flex items-center cursor-pointer">
       <span class="mr-2 text-gray-600 font-medium hidden sm:block">{{ label }}</span>
       <div class="relative">

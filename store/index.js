@@ -8,14 +8,15 @@ const createStore = () => {
       waxPrice: '',
       userAccount: '',
       userBalance: null,
-      userHasPaid: true,
+      userCpu: {},
       withdrawalFee: '',
 
       userRessources: '',
       userTools: [],
       userMbs: [],
       userCrops: [],
-      userAnimals: []
+      userAnimals: [],
+      animations: false
     },
     mutations: {
       setWax(state, wax) {
@@ -30,8 +31,8 @@ const createStore = () => {
       setUserBalance(state, balance) {
         state.userBalance = balance
       },
-      setUserHasPaid(state, userHasPaid) {
-        state.userHasPaid = userHasPaid
+      setUserCpu(state, cpu) {
+        state.userCpu = cpu
       },
       setWithdrawalFee(state, fee) {
         state.withdrawalFee = fee
@@ -49,8 +50,11 @@ const createStore = () => {
       setUserCrops(state, crops) {        
         state.userCrops = crops
       },
-      setUserAnimals(state, animals) {        
+      setUserAnimals(state, animals) {
         state.userAnimals = animals
+      },
+      setAnimations(state, animations) {        
+        state.animations = animations
       }
     },
     actions: {
@@ -84,12 +88,11 @@ const createStore = () => {
           account_name: getters.userAccount
         })
 
+        commit('setUserCpu', data.cpu_limit)
+
         const balance = Math.floor(parseFloat((data.core_liquid_balance).replace(/[^\d.-]/g, '')) * 100) / 100
 
         commit('setUserBalance', balance)
-      },
-      setUserHasPaid({ commit }, userHasPaid) {
-        commit('setUserHasPaid', userHasPaid)
       },
       async getWithdrawalFee({ commit }) {
         const data = await this.$axios.$post('https://chain.wax.io/v1/chain/get_table_rows', {
@@ -131,12 +134,54 @@ const createStore = () => {
         const userTemplates = (await this.$axios.$get('https://wax.api.atomicassets.io/atomicassets/v1/accounts/' + getters.userAccount)).data.templates
         const fcTemplate = userTemplates.find(template => template.template_id === '260676')
         let nbFarmerCoins = 0
+        const barleySeedTemplate = userTemplates.find(template => template.template_id === '298595')
+        let nbBarleySeeds = 0
+        const barleyTemplate = userTemplates.find(template => template.template_id === '318606')
+        let nbBarleys = 0
+        const cornSeedTemplate = userTemplates.find(template => template.template_id === '298596')
+        let nbCornSeeds = 0
+        const cornTemplate = userTemplates.find(template => template.template_id === '318607')
+        let nbCorns = 0
+        const chickenEggsTemplate = userTemplates.find(template => template.template_id === '298612')
+        let nbChickenEggs = 0
+        const milkTemplate = userTemplates.find(template => template.template_id === '298593')
+        let nbMilks = 0
 
         if (fcTemplate) {
             nbFarmerCoins = fcTemplate.assets
         }
 
+        if (barleySeedTemplate) {
+            nbBarleySeeds = barleySeedTemplate.assets
+        }
+
+        if (barleyTemplate) {
+            nbBarleys = barleyTemplate.assets
+        }
+
+        if (cornSeedTemplate) {
+            nbCornSeeds = cornSeedTemplate.assets
+        }
+
+        if (cornTemplate) {
+            nbCorns = cornTemplate.assets
+        }
+
+        if (chickenEggsTemplate) {
+            nbChickenEggs = chickenEggsTemplate.assets
+        }
+
+        if (milkTemplate) {
+            nbMilks = milkTemplate.assets
+        }
+
         ressources.balances.push(nbFarmerCoins + ' FC')
+        ressources.balances.push(nbBarleySeeds + ' BARLEY SEEDS')
+        ressources.balances.push(nbBarleys + ' BARLEYS')
+        ressources.balances.push(nbCornSeeds + ' CORN SEEDS')
+        ressources.balances.push(nbCorns + ' CORNS')
+        ressources.balances.push(nbChickenEggs + ' CHICKEN EGGS')
+        ressources.balances.push(nbMilks + ' MILKS')
 
         commit('setUserRessources', ressources)
       },
@@ -295,14 +340,30 @@ const createStore = () => {
         const animals = animalsData.rows
         const animalConfs = animalConfsData.rows
 
+        const fwTemplates = (await this.$axios.$get('https://wax.api.atomicassets.io/atomicassets/v1/templates?collection_name=farmersworld&page=1&limit=500&order=desc&sort=created')).data
+
         animals.forEach(animal => {
           const animalConf = animalConfs.find(animalConf => animalConf.template_id === animal.template_id)
           animal.name = animalConf.name
           animal.img_url = 'https://mypinata.cloud/ipfs/' + animalConf.img
           animal.required_claims = animalConf.required_claims
+          animal.consumed_card = animalConf.consumed_card
+          animal.consumed_card_name = animalConf.consumed_card === 0 ? '' : (fwTemplates.find(tpl => tpl.template_id === animal.consumed_card.toString())).name
+          animal.consumed_quantity = animalConf.consumed_quantity
+          animal.daily_claim_limit = animalConf.daily_claim_limit
+          animal.reward_card_name = animalConf.reward_card === 0 ? '' : (fwTemplates.find(tpl => tpl.template_id === animalConf.reward_card.toString())).name
+
+          if (animal.day_claims_at) {
+            if (animal.day_claims_at.length === animal.daily_claim_limit && animal.next_availability < Math.min(...animal.day_claims_at) + 3600 * 24) {
+              animal.next_availability = Math.min(...animal.day_claims_at) + 3600 * 24
+            }
+          }
         });
 
         commit('setUserAnimals', animals)
+      },
+      setAnimations({ commit }, animations) {
+        commit('setAnimations', animations)
       }
     },
     getters: {
@@ -356,6 +417,72 @@ const createStore = () => {
             return 0
           }
           return parseInt(fcRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userBarleys(state) {
+        if (state.userRessources) {
+          const barleyRss = state.userRessources.balances.find(rss => rss.includes('BARLEYS'))
+          if (!barleyRss) {
+            return 0
+          }
+          return parseInt(barleyRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userBarleySeeds(state) {
+        if (state.userRessources) {
+          const barleySeedRss = state.userRessources.balances.find(rss => rss.includes('BARLEY SEEDS'))
+          if (!barleySeedRss) {
+            return 0
+          }
+          return parseInt(barleySeedRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userCorns(state) {
+        if (state.userRessources) {
+          const cornRss = state.userRessources.balances.find(rss => rss.includes('CORNS'))
+          if (!cornRss) {
+            return 0
+          }
+          return parseInt(cornRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userCornSeeds(state) {
+        if (state.userRessources) {
+          const cornSeedRss = state.userRessources.balances.find(rss => rss.includes('CORN SEEDS'))
+          if (!cornSeedRss) {
+            return 0
+          }
+          return parseInt(cornSeedRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userChickenEggs(state) {
+        if (state.userRessources) {
+          const chickenEggRss = state.userRessources.balances.find(rss => rss.includes('CHICKEN EGGS'))
+          if (!chickenEggRss) {
+            return 0
+          }
+          return parseInt(chickenEggRss.replace(/[^\d.-]/g, ''))
+        } else {
+          return 0
+        }
+      },
+      userMilks(state) {
+        if (state.userRessources) {
+          const MilkRss = state.userRessources.balances.find(rss => rss.includes('MILKS'))
+          if (!MilkRss) {
+            return 0
+          }
+          return parseInt(MilkRss.replace(/[^\d.-]/g, ''))
         } else {
           return 0
         }

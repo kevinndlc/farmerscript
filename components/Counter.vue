@@ -61,9 +61,11 @@ export default {
     },
     // eslint-disable-next-line object-shorthand
     autoclaim: function() {
-      this.loaded = false
-      this.readyToClaim = false
-      this.showRemaining()
+      if (this.autoclaim) {
+        this.loaded = false
+        this.readyToClaim = false
+        this.showRemaining()
+      }
     }
   },
   mounted() {
@@ -97,9 +99,13 @@ export default {
       }, 1000)
     },
     handleClaim() {
-      setTimeout(() => {
+      if (this.autoclaim) {
+        setTimeout(() => {
+          this.$emit('claimed')
+        }, this.waitingSeconds * 500)
+      } else {
         this.$emit('claimed')
-      }, this.waitingSeconds * 500)
+      }
     }
   },
 }

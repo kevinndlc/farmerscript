@@ -1,16 +1,16 @@
 <template>
   <!-- eslint-disable-next-line vue/attribute-hyphenation -->
-  <carousel-3d :width="180" height="310" :autoplay="true" :autoplayTimeout="5000" :controls-visible="true" :display="numberOfSlides"> 
+  <carousel-3d :key="enableAnimations" :width="180" height="310" :autoplay="enableAnimations" :autoplayTimeout="5000" :controls-visible="true" :display="numberOfSlides"> 
     <slide v-for="(slide, i) in slides" :key="i" :index="i">
       <template slot-scope="{ index, isCurrent, leftIndex, rightIndex }">
-        <div v-if="slide.current_durability >= 0" class="absolute w-full top-5 font-medium text-gray-600 text-center cursor-pointer">
+        <div v-if="slide.current_durability >= 0" class="absolute w-full top-4 font-medium text-gray-600 text-center cursor-pointer">
           {{ slide.current_durability }}/{{ slide.durability }}
         </div>
-        <div v-if="slide.times_claimed >= 0" class="absolute w-full top-5 font-medium text-gray-600 text-center cursor-pointer">
+        <div v-if="slide.times_claimed >= 0" class="absolute w-full top-4 font-medium text-gray-600 text-center cursor-pointer">
           {{ slide.times_claimed }}/{{ slide.required_claims }}
         </div>
         <img :data-index="index" :class="[{ current: isCurrent, onLeft: (leftIndex >= 0), onRight: (rightIndex >= 0)}, 'cursor-pointer']" :src="slide.img_url">
-        <Counter v-show="isCurrent" :timestamp="slide.next_availability" :autoclaim="autoclaim" :waitingSeconds="i" @claimed="handleClaim(slide.asset_id)"/>
+        <Counter v-show="isCurrent" :timestamp="slide.next_availability" :autoclaim="autoclaim" :waitingSeconds="i" @claimed="handleClaim(slide)"/>
       </template>
     </slide>
   </carousel-3d>
@@ -42,6 +42,9 @@ export default {
   computed: {
     numberOfSlides() {
       return (this.windowWidth >= 1050 || (this.windowWidth < 768 && this.windowWidth > 550)) ? 5 : 3
+    },
+    enableAnimations() {
+      return this.$store.state.animations
     }
   },
   mounted() {
@@ -50,8 +53,8 @@ export default {
     })
   },
   methods: {
-    handleClaim(assetId) {
-      this.$emit('claimAsset', assetId, 1)
+    handleClaim(asset) {
+      this.$emit('claimAsset', asset, 1)
     }
   }
 }

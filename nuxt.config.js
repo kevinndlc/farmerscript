@@ -19,7 +19,6 @@ export default {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', href:'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' }
     ]
   },
 
@@ -58,8 +57,8 @@ export default {
     position: "top-center",
     timeout: 5000,
     closeOnClick: true,
-    pauseOnFocusLoss: true,
-    pauseOnHover: true,
+    pauseOnFocusLoss: false,
+    pauseOnHover: false,
     draggable: true,
     draggablePercent: 0.6,
     showCloseButtonOnHover: true,

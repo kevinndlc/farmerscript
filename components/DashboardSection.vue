@@ -1,8 +1,7 @@
 <template>
-  <div class="flex flex-col max-w-7xl px-4 pb-4 mx-auto h-full gap-4">
+  <div class="flex flex-col max-w-7xl px-4 mx-auto h-full gap-4">
     <WithdrawalAlert />
-    <RessourcesCard class="block md:hidden"/>
-    <div class="flex flex-col md:flex-row gap-4">
+    <div v-if="userTools.length > 0 || userMbs.length > 0" class="flex flex-col md:flex-row gap-4">
       <ToolsCard />
       <MembershipsCard />
     </div>
@@ -12,3 +11,29 @@
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  computed: {
+    userTools() {
+      return this.$store.state.userTools
+    },
+    userMbs() {
+      return this.$store.state.userMbs
+    }
+  },
+  async mounted() {
+    await this.$store.dispatch('getUserRessources')
+    await this.$store.dispatch('getUserTools')
+    await this.$store.dispatch('getUserMbs')
+
+    setInterval(async () => {
+      await this.$store.dispatch('getUserRessources')
+      await this.$store.dispatch('getUserTools')
+      await this.$store.dispatch('getUserMbs')
+      await this.$store.dispatch('getUserCrops')
+      await this.$store.dispatch('getUserAnimals')
+    }, 60000)
+  }
+}
+</script>

@@ -1,7 +1,6 @@
 <template>
   <div>
     <HomeSection v-if="!userAccount" />
-    <PricingSection v-else-if="!userHasPaid" />
     <DashboardSection v-else />
   </div>
 </template>
@@ -13,14 +12,11 @@ export default {
   computed: {
     userAccount() {
       return this.$store.state.userAccount
-    },
-    userHasPaid() {
-      return this.$store.state.userHasPaid
     }
   },
   created() {
     this.$store.dispatch('getWax', new waxjs.WaxJS({
-      rpcEndpoint: 'https://chain.wax.io/',
+      rpcEndpoint: 'https://api.wax.greeneosio.com', // https://wax.cryptolions.io
       tryAutoLogin: true
     }))
   }
