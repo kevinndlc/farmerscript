@@ -22,17 +22,17 @@ export default {
       return this.$store.state.userMbs
     }
   },
-  async mounted() {
-    await this.$store.dispatch('getUserRessources')
-    await this.$store.dispatch('getUserTools')
-    await this.$store.dispatch('getUserMbs')
+  mounted() {
+    this.$store.dispatch('getUserRessources')
+    this.$store.dispatch('getUserTools')
+    this.$store.dispatch('getUserMbs')
 
-    setInterval(async () => {
-      await this.$store.dispatch('getUserRessources')
-      await this.$store.dispatch('getUserTools')
-      await this.$store.dispatch('getUserMbs')
-      await this.$store.dispatch('getUserCrops')
-      await this.$store.dispatch('getUserAnimals')
+    setInterval(() => {
+      this.$store.dispatch('getUserRessources')
+      this.$store.dispatch('getUserTools')
+      this.$store.dispatch('getUserMbs')
+      this.$store.dispatch('getUserCrops')
+      this.$store.dispatch('getUserAnimals')
     }, 60000)
   }
 }

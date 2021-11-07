@@ -1,6 +1,5 @@
 <template>
-  <!-- eslint-disable-next-line vue/attribute-hyphenation -->
-  <carousel-3d :key="enableAnimations" :width="180" height="310" :autoplay="enableAnimations" :autoplayTimeout="5000" :controls-visible="true" :display="numberOfSlides"> 
+  <carousel-3d :key="enableAnimations && slides.length" :width="180" height="310" :autoplay="enableAnimations" :autoplayTimeout="5000" :controls-visible="true" :display="numberOfSlides"> 
     <slide v-for="(slide, i) in slides" :key="i" :index="i">
       <template slot-scope="{ index, isCurrent, leftIndex, rightIndex }">
         <div v-if="slide.current_durability >= 0" class="absolute w-full top-4 font-medium text-gray-600 text-center cursor-pointer">

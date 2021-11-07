@@ -112,14 +112,14 @@ export default {
               blocksBehind: 3,
               expireSeconds: 30
             })
-            console.log(res);
 
             if (asset.times_claimed === asset.required_claims - 1) {
+              const nbRewards = res.processed.action_traces.filter(e => e.receiver === 'atomicassets')[0].inline_traces.filter(e => e.act.name === 'logclaimrs')[0].act.data.quantity
               this.$toast.success({
                 component: CustomNotification,
                 props: {
                   title: `Successfully fed your ${asset.name} with ${asset.consumed_card_name}`,
-                  message: `You just obtained ? ${asset.reward_card_name}s` // NEED TO WRITE NB OF REWARDS && KNOW WHAT TO DO WHEN FINAL CLAIM
+                  message: `You just obtained ${nbRewards} ${asset.reward_card_name}s`
                 }
               })
             } else {

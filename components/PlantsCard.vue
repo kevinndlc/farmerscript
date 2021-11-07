@@ -71,7 +71,6 @@ export default {
           expireSeconds: 30
         })
 
-        console.log(res);
         if (asset.times_claimed === asset.required_claims - 1) {
           const nbRewards = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.act.name === 'mintasset').length
           this.$toast.success({
