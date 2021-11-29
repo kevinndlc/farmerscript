@@ -99,13 +99,14 @@ export default {
       }, 1000)
     },
     handleClaim() {
-      if (this.autoclaim) {
-        setTimeout(() => {
-          this.$emit('claimed')
-        }, this.waitingSeconds * 500)
-      } else {
-        this.$emit('claimed')
-      }
+      // if (this.autoclaim) {
+      //   setTimeout(() => {
+      //     this.$emit('claimed')
+      //   }, this.waitingSeconds * 1000)
+      // } else {
+      //   this.$emit('claimed')
+      // }
+      this.$emit('claimed')
     }
   },
 }

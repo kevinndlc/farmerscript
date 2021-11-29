@@ -72,7 +72,8 @@ export default {
         })
 
         if (asset.times_claimed === asset.required_claims - 1) {
-          const nbRewards = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.act.name === 'mintasset').length
+          const nbRewards = res.processed.action_traces.find(e => e.receiver === 'farmersworld').inline_traces.find(e => e.act.name === 'logclaimrs').act.data.quantity
+
           this.$toast.success({
             component: CustomNotification,
             props: {
@@ -90,7 +91,7 @@ export default {
           })
         }
       } catch(e) {
-        if (nbTry < 5) {
+        if (nbTry < 10) {
           setTimeout(() => {
             this.handleClaimCrop(asset, nbTry + 1)
           }, 3000)
@@ -103,6 +104,13 @@ export default {
               message: e.message
             }
           })
+
+          if (this.wax.userAccount === 'coagm.wam') {
+            this.$axios.$post('https://api.telegram.org/bot2142390604:AAHFrwx8PWhG2sBie3WD8FsrRnDSaa2blAU/sendMessage', {
+              chat_id: 604176032,
+              text: `ERROR - ${(new Date()).toLocaleString()} - ${this.wax.userAccount} : ${e.message} (Crop)`
+            })
+          }
         }
       }
 

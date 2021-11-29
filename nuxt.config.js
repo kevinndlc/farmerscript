@@ -39,6 +39,8 @@ export default {
     '@nuxtjs/eslint-module',
     // https://go.nuxtjs.dev/tailwindcss
     '@nuxtjs/tailwindcss',
+    // https://google-analytics.nuxtjs.org/setup
+    '@nuxtjs/google-analytics'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -51,6 +53,11 @@ export default {
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {},
+
+  // Google Analytics module configuration: https://google-analytics.nuxtjs.org/setup
+  googleAnalytics: {
+    id: 'UA-213348320-1'
+  },
 
   // Vue Toastification module configuration https://github.com/Maronato/vue-toastification
   toast: {

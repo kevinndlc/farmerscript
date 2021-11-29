@@ -12,8 +12,16 @@
             <span class="text-gray-600 font-medium mr-2">{{ userRessources.energy }} / {{ userRessources.max_energy }}</span>
             <img class="h-8 w-8 mr-2" src="~assets/img/nrj.png" alt="Energy">
           </div>
-          <PrimaryButton v-if="!userAccount" @click="handleLogin">Log in</PrimaryButton>
-          <PrimaryButton v-else @click="showRessources = !showRessources">{{ showRessourcesText }}</PrimaryButton>
+          <div class="flex items-center gap-4">
+            <div v-if="!userAccount" class="hidden sm:block">
+              <label for="rpc" class="text-gray-800 font-medium">RPC :</label>
+              <select id="rpc" v-model="favoriteRpc" class="bg-transparent text-gray-600">
+                <option v-for="rpc in rpcList" :key="rpc">{{ rpc }}</option>
+              </select>
+            </div>
+            <PrimaryButton v-if="!userAccount" @click="handleLogin">Log in</PrimaryButton>
+            <PrimaryButton v-else @click="showRessources = !showRessources">{{ showRessourcesText }}</PrimaryButton>
+          </div>
         </div>
         <transition v-if="userAccount" name="fade">
           <RessourcesCard v-show="showRessources && userRessources" class="absolute w-full bg-gray-100 border-2 p-4 border-primary z-50 right-0 top-20" />
@@ -24,12 +32,20 @@
 </template>
 
 <script>
+import * as waxjs from '@waxio/waxjs/dist'
 import CustomNotification from '~/components/CustomNotification.vue'
 
 export default {
   data() {
     return {
-      showRessources: false
+      showRessources: false,
+      rpcList: [
+        'https://api.wax.greeneosio.com',
+        'https://wax.cryptolions.io',
+        'https://api-wax.eosauthority.com',
+        'https://wax.greymass.com'
+      ],
+      favoriteRpc: localStorage.getItem('favoriteRpc') ? localStorage.getItem('favoriteRpc') : 'https://api.wax.greeneosio.com'
     }
   },
   computed: {
@@ -64,8 +80,17 @@ export default {
       return this.showRessources ? 'Close' : this.userAccount
     }
   },
+  watch: {
+    favoriteRpc(newVal) {
+      localStorage.setItem('favoriteRpc', newVal)
+    }
+  },
   methods: {
     async handleLogin() {
+      this.$store.dispatch('getWax', new waxjs.WaxJS({
+        rpcEndpoint: this.favoriteRpc,
+        tryAutoLogin: true
+      }))
       await this.$store.dispatch('getUserAccount')
       if (this.userAccount) {
         this.$toast.success({
@@ -131,7 +156,7 @@ export default {
 
         setTimeout(async () => {
           await this.$store.dispatch('getUserRessources')
-        }, 1000)
+        }, 1500)
       }
     }
   }
@@ -144,5 +169,10 @@ export default {
   }
   .fade-enter, .fade-leave-to {
     opacity: 0;
+  }
+
+  select:focus > option:checked {
+    background: #98CA2D;
+    color: white;
   }
 </style>

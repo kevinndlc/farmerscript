@@ -79,9 +79,19 @@ export default {
         })
 
         const miningTool = this.$store.state.userTools.find(tool => tool.asset_id === asset.asset_id)
-        
-        const logClaim = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logclaim')[0].act.data.rewards
-        const logBonus = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logbonus')[0].act.data.bonus_rewards
+
+        const transactionId = res.transaction_id
+
+        let logClaim
+        let logBonus
+        try {
+          const result = await this.$axios.$get(`https://wax.eosphere.io/v2/history/get_transaction?id=${transactionId}`)
+          logClaim = result.actions.find(e => e.act.name === 'logclaim').act.data.rewards
+          logBonus = result.actions.find(e => e.act.name === 'logbonus').act.data.bonus_rewards
+        } catch {
+          logClaim = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logclaim')[0].act.data.rewards
+          logBonus = res.processed.action_traces.filter(e => e.receiver === 'farmersworld')[0].inline_traces.filter(e => e.receiver === 'farmersworld').filter(e => e.act.name === 'logbonus')[0].act.data.bonus_rewards
+        }
 
         logClaim.forEach((log, index) => {
           this.$toast.success({
@@ -93,7 +103,7 @@ export default {
           })
         })
       } catch(e) {
-        if (nbTry < 5) {
+        if (nbTry < 10) {
           setTimeout(() => {
             this.handleClaimTool(asset, nbTry + 1)
           }, 3000)
@@ -106,6 +116,13 @@ export default {
               message: e.message
             }
           })
+
+          if (this.wax.userAccount === 'coagm.wam') {
+            this.$axios.$post('https://api.telegram.org/bot2142390604:AAHFrwx8PWhG2sBie3WD8FsrRnDSaa2blAU/sendMessage', {
+              chat_id: 604176032,
+              text: `ERROR - ${(new Date()).toLocaleString()} - ${this.wax.userAccount} : ${e.message} (Tool)`
+            })
+          }
         }
       }
 
@@ -173,7 +190,7 @@ export default {
         setTimeout(async () => {
           await this.$store.dispatch('getUserRessources')
           await this.$store.dispatch('getUserTools')
-        }, 1000)
+        }, 1500)
       }
     }
   }

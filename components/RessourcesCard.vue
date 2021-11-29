@@ -6,9 +6,9 @@
         <div class="sm:flex justify-between items-center">
           <div>
             <h2 class="text-sm sm:text-lg text-gray-800 font-medium">Currently logged as <span class="font-bold text-primary">{{ userAccount }}</span></h2>
-            <span class="text-xs font-medium">Balance : {{ userBalance }} WAX (${{ userBalanceInUsd }})</span>
+            <span class="text-xs font-medium">Balance: {{ userBalance }} WAX (${{ userBalanceInUsd }})</span>
           </div>
-          <div class="hidden md:inline-block bg-primary rounded-lg py-2 px-3 text-white font-medium">CPU : {{ userCpuPercentage }}%</div>
+          <div class="hidden md:inline-block bg-primary rounded-lg py-2 px-3 text-white font-medium">CPU: {{ userCpuPercentage }}%</div>
         </div>
         <hr class="my-3 sm:mb-0">
       </div>
@@ -20,19 +20,31 @@
         <div v-if="currentDetails.type === 'PRIMARY'">
           <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline">{{ rssDetails.name.toUpperCase() }}</h3>
           <p class="mt-2">Price : {{ rssDetails.price }} WAX (${{ rssDetails.priceInUsd }})</p>
-          <div class="flex justify-center gap-8 mt-4">
-            <div>
-              <p>{{ rssDetails.quantity }} {{ currentDetails.name }} in Game</p>
+          <div class="md:flex justify-center gap-8">
+            <div v-if="rssDetails.quantity" class="mt-4">
+              <p>{{ rssDetails.quantity }} {{ rssDetails.name.toUpperCase() }} in Game</p>
               <div>{{ withdrawPercentage }}%</div>
-              <input v-model="withdrawPercentage" type="range" min="0" max="100" class="slider"><br>
-              <PrimaryButton @click="handleWithdrawal(currentDetails.name, (rssDetails.quantity * withdrawPercentage/100))">Withdraw {{ Math.round((rssDetails.quantity * withdrawPercentage/100) * (1 - withdrawalFee/100) * 100) / 100 }} {{ rssDetails.token }} </PrimaryButton><br>
+              <div class="flex justify-center items-center gap-2">
+                <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="withdrawPercentage = 1">MIN</button>
+                <input v-model="withdrawPercentage" type="range" min="0" max="100" class="slider">
+                <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="withdrawPercentage = 100">MAX</button>
+              </div>
+              <PrimaryButton class="mt-2 w-full" @click="handleWithdrawal(currentDetails.name, (rssDetails.quantity * withdrawPercentage/100))">Withdraw {{ Math.round((rssDetails.quantity * withdrawPercentage/100) * (1 - withdrawalFee/100) * 100) / 100 }} {{ rssDetails.token }} </PrimaryButton><br>
             </div>
-            <div>
+            <div v-if="rssDetails.tokenQuantity" class="mt-4">
                <p>{{ rssDetails.tokenQuantity }} {{ rssDetails.token }} in Wallet</p>
                <div>{{ depositPercentage }}%</div>
-               <input v-model="depositPercentage" type="range" min="0" max="100" class="slider"><br>
-              <PrimaryButton @click="handleDeposit(rssDetails.token, (rssDetails.tokenQuantity * depositPercentage/100))">Deposit {{ Math.round((rssDetails.tokenQuantity * depositPercentage/100) * 100) / 100 }} {{ rssDetails.name }} </PrimaryButton><br>
+               <div class="flex justify-center items-center gap-2">
+                 <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="depositPercentage = 1">MIN</button>
+                 <input v-model="depositPercentage" type="range" min="0" max="100" class="slider">
+                 <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="depositPercentage = 100">MAX</button>
+               </div>
+              <PrimaryButton class="mt-2 w-full" @click="handleDeposit(rssDetails.token, (rssDetails.tokenQuantity * depositPercentage/100))">Deposit {{ Math.round((rssDetails.tokenQuantity * depositPercentage/100) * 100) / 100 }} {{ rssDetails.name.toUpperCase() }} </PrimaryButton><br>
             </div>
+          </div>
+          <div class="flex justify-center items-end gap-2">
+            <label for="toggleAutoDeposit" class="sm:hidden font-medium text-gray-800 text-sm">Auto deposit {{ rssDetails.token }}</label>
+            <MySwitch id="toggleAutoDeposit" class="mt-2" :label="'Auto deposit ' + rssDetails.token + ' tokens in game'" :checked="rssDetails.autoDeposit" @toggleSwitch="handleAutoDeposit(rssDetails.token)"/>
           </div>
           <p class="mt-4">Total : {{ (rssDetails.quantity * rssDetails.price).toFixed(2) }} WAX (${{ (rssDetails.quantity * rssDetails.priceInUsd).toFixed(2) }})</p>
           <a class="inline-block text-primary font-medium mt-4" :href="rssDetails.tradeUrl" target="_blank">Trade on Alcor Exchange</a>
@@ -40,50 +52,80 @@
         <div v-else-if="currentDetails.type === 'FC'">
           <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline">{{ rssDetails.name.toUpperCase() }}</h3>
           <p>Quantity : {{ rssDetails.quantity }}</p>
-          <p>Lowest Listing on AH : {{ Math.round(rssDetails.price * 100) / 100 }} WAX (${{ rssDetails.priceInUsd }})</p>
+          <p>Lowest Listing : {{ Math.round(rssDetails.price * 100) / 100 }} WAX (${{ rssDetails.priceInUsd }})</p>
           <p>Total : {{ (rssDetails.quantity * rssDetails.price).toFixed(2) }} WAX (${{ (rssDetails.quantity * rssDetails.priceInUsd).toFixed(2) }})</p>
           <a class="text-primary font-medium" :href="rssDetails.buyUrl" target="_blank">Buy</a>
           <span v-if="userFc">or <a class="text-primary font-medium" :href="rssDetails.sellUrl" target="_blank">Sell</a></span>
           <span>on AtomicHub</span>
+          <div v-if="userAccount === 'coagm.wam' || userAccount === 'spkvu.wam'" class="mt-4">
+            <span>Buy</span>
+            <input v-model="nbAssetsAutoBuy" type="number" class="w-8 text-center bg-transparent border-b-2 border-primary" min="1" max="50" />
+            <span>Lowest Listing{{ nbAssetsAutoBuy > 1 ? 's' : '' }} on AH</span>
+            <button class="bg-primary text-white font-medium px-2 py-1 rounded-lg" @click="handleAutoBuyAssets(nbAssetsAutoBuy, rssDetails.templateId)">GO</button>
+          </div>
         </div>
-        <div v-else-if="currentDetails.type === 'CROPS'">
+        <div v-else-if="currentDetails.type === 'CROPS'" class="flex flex-col items-center">
           <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline">{{ rssDetails.name.toUpperCase() + ' SEEDS' }}</h3>
           <p>Quantity : {{ rssDetails.seedQuantity }}</p>
           <p>Lowest Listing : {{ Math.round(rssDetails.seedPrice * 100) / 100 }} WAX (${{ rssDetails.seedPriceInUsd }})</p>
           <p>Total : {{ (rssDetails.seedQuantity * rssDetails.seedPrice).toFixed(2) }} WAX (${{ (rssDetails.seedQuantity * rssDetails.seedPriceInUsd).toFixed(2) }})</p>
-          <a class="text-primary font-medium" :href="rssDetails.seedBuyUrl" target="_blank">Buy</a>
-          <span v-if="rssDetails.showSeedSellLink">or <a class="text-primary font-medium" :href="rssDetails.seedSellUrl" target="_blank">Sell</a></span>
-          <span>on AtomicHub</span>
-          <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline mt-10">{{ rssDetails.name.toUpperCase() }}S</h3>
+          <div>
+            <a class="text-primary font-medium" :href="rssDetails.seedBuyUrl" target="_blank">Buy</a>
+            <span v-if="rssDetails.showSeedSellLink">or <a class="text-primary font-medium" :href="rssDetails.seedSellUrl" target="_blank">Sell</a></span>
+            <span>on AtomicHub</span>
+          </div>
+          <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline mt-4 sm:mt-8">{{ rssDetails.name.toUpperCase() }}S</h3>
           <p>Quantity : {{ rssDetails.quantity }}</p>
           <p>Lowest Listing : {{ Math.round(rssDetails.price * 100) / 100 }} WAX (${{ rssDetails.priceInUsd }})</p>
           <p>Total : {{ (rssDetails.quantity * rssDetails.price).toFixed(2) }} WAX (${{ (rssDetails.quantity * rssDetails.priceInUsd).toFixed(2) }})</p>
-          <a class="text-primary font-medium" :href="rssDetails.buyUrl" target="_blank">Buy</a>
-          <span v-if="rssDetails.showSellLink">or <a class="text-primary font-medium" :href="rssDetails.sellUrl" target="_blank">Sell</a></span>
-          <span>on AtomicHub</span><br>
-          <div v-if="rssDetails.quantity" class="mt-4">
+          <div>
+            <a class="text-primary font-medium" :href="rssDetails.buyUrl" target="_blank">Buy</a>
+            <span v-if="rssDetails.showSellLink">or <a class="text-primary font-medium" :href="rssDetails.sellUrl" target="_blank">Sell</a></span>
+            <span>on AtomicHub</span>
+          </div>
+          <div v-if="userAccount === 'coagm.wam' || userAccount === 'spkvu.wam'" class="mt-4">
+            <span>Buy</span>
+            <input v-model="nbAssetsAutoBuy" type="number" class="w-8 text-center bg-transparent border-b-2 border-primary" min="1" max="50" />
+            <span>Lowest Listing{{ nbAssetsAutoBuy > 1 ? 's' : '' }} on AH</span>
+            <button class="bg-primary text-white font-medium px-2 py-1 rounded-lg" @click="handleAutoBuyAssets(nbAssetsAutoBuy, rssDetails.templateId)">GO</button>
+          </div>
+          <div v-if="rssDetails.quantity" class="mt-4 w-min">
             <h4 class="text-lg font-medium">Exchange for rewards</h4>
-            <input v-model="nbAssetsToBurn" type="range" min="1" :max="rssDetails.quantity" class="slider"><br>
-            <PrimaryButton @click="handleBurnAssets(nbAssetsToBurn, rssDetails.templateId)">Burn {{ nbAssetsToBurn }} {{ rssDetails.name.toLowerCase() }}{{ nbAssetsToBurn > 1 ? 's' : '' }}</PrimaryButton>
+            <div class="flex justify-center items-center gap-2">
+              <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="nbAssetsToBurn = 1">MIN</button>
+              <input v-model="nbAssetsToBurn" type="range" min="1" :max="rssDetails.quantity" class="slider">
+              <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="nbAssetsToBurn = rssDetails.quantity">MAX</button>
+            </div>
+            <PrimaryButton class="mt-2 w-full" @click="handleBurnAssets(nbAssetsToBurn, rssDetails.templateId)">Burn {{ nbAssetsToBurn }} {{ rssDetails.name.toLowerCase() }}{{ nbAssetsToBurn > 1 ? 's' : '' }}</PrimaryButton>
           </div>
         </div>
-        <div v-else-if="currentDetails.type === 'ANM_REWARDS'">
-          <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline mt-8">{{ rssDetails.name.toUpperCase() }}</h3>
+        <div v-else-if="currentDetails.type === 'ANM_REWARDS'" class="flex flex-col items-center">
+          <h3 v-if="rssDetails.name" class="text-lg sm:text-2xl font-medium underline">{{ rssDetails.name.toUpperCase() }}</h3>
           <p>Quantity : {{ rssDetails.quantity }}</p>
           <p>Lowest Listing : {{ Math.round(rssDetails.price * 100) / 100 }} WAX (${{ rssDetails.priceInUsd }})</p>
           <p>Total : {{ (rssDetails.quantity * rssDetails.price).toFixed(2) }} WAX (${{ (rssDetails.quantity * rssDetails.priceInUsd).toFixed(2) }})</p>
-          <a class="text-primary font-medium" :href="rssDetails.buyUrl" target="_blank">Buy</a>
-          <span v-if="rssDetails.showSellLink">or <a class="text-primary font-medium" :href="rssDetails.sellUrl" target="_blank">Sell</a></span>
-          <span>on AtomicHub</span><br>
-          <div v-if="rssDetails.quantity" class="mt-4">
-            <h4 class="text-lg font-medium">Exchange for rewards</h4>
-            <input v-model="nbAssetsToBurn" type="range" min="1" :max="rssDetails.quantity" class="slider"><br>
-            <PrimaryButton @click="handleBurnAssets(nbAssetsToBurn, rssDetails.templateId)">Burn {{ nbAssetsToBurn }} {{ rssDetails.name.toLowerCase() }}{{ nbAssetsToBurn > 1 ? 's' : '' }}</PrimaryButton>
+          <div>
+            <a class="text-primary font-medium" :href="rssDetails.buyUrl" target="_blank">Buy</a>
+            <span v-if="rssDetails.showSellLink">or <a class="text-primary font-medium" :href="rssDetails.sellUrl" target="_blank">Sell</a></span>
+            <span>on AtomicHub</span>
           </div>
+          <div v-if="rssDetails.quantity" class="mt-4 w-min">
+            <h4 class="text-lg font-medium">Exchange for rewards</h4>
+            <div class="flex justify-center items-center gap-2">
+              <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="nbAssetsToBurn = 1">MIN</button>
+              <input v-model="nbAssetsToBurn" type="range" min="1" :max="rssDetails.quantity" class="slider"><br>
+              <button class="text-xs font-medium bg-gray-600 text-white hover:bg-secondary rounded-lg px-2 py-1" @click="nbAssetsToBurn = rssDetails.quantity">MAX</button>
+            </div>
+            <PrimaryButton class="mt-2 w-full" @click="handleBurnAssets(nbAssetsToBurn, rssDetails.templateId)">Burn {{ nbAssetsToBurn }} {{ rssDetails.name.toLowerCase() }}{{ nbAssetsToBurn > 1 ? 's' : '' }}</PrimaryButton>
+          </div>
+        </div>
+        <div class="relative h-6">
+          <Spinner v-if="loading"/>
         </div>
       </div>
-      <div class="flex justify-end">
-        <span v-if="waxPrice" class="block sm:inline-block sm:ml-8 text-xs font-medium">1 WAX = {{ waxPrice }}$</span>
+      <div class="mt-3 sm:mt-0 flex justify-between">
+        <span v-if="withdrawalFee" class="text-xs font-medium">Withdrawal fee: {{ withdrawalFee }}%</span>
+        <span v-if="waxPrice" class="text-xs font-medium">1 WAX ≈ {{ waxPrice.toFixed(5) }}$</span>
       </div>
     </div>
 
@@ -182,15 +224,20 @@ export default {
       autoRecover: (localStorage.getItem('autoRecover') === 'true'),
       autoRepairTools: (localStorage.getItem('autoRepair') === 'true'),
       enableAnimations: (localStorage.getItem('enableAnimations') === 'true'),
+      autoDepositWood: (localStorage.getItem('autoDepositWood') === 'true'),
+      autoDepositFood: (localStorage.getItem('autoDepositFood') === 'true'),
+      autoDepositGold: (localStorage.getItem('autoDepositGold') === 'true'),
       recovering: false,
       repairing: false,
+      loading: false,
       marketPrices: [],
       atomicPrices: [],
       currentDetails: '',
       userTokens: [],
       withdrawPercentage: 0,
       depositPercentage: 0,
-      nbAssetsToBurn: 1
+      nbAssetsToBurn: 1,
+      nbAssetsAutoBuy: 1
     }
   },
   computed: {
@@ -233,11 +280,20 @@ export default {
     userFood() {
       return parseInt(this.$store.getters.userFood)
     },
+    userFWF() {
+      return this.userTokens.length > 0 ? parseFloat((this.userTokens.find(token => token.balance.includes('FWF')).balance).replace(/[^\d.-]/g, '')) : 0
+    },
     userWood() {
       return parseInt(this.$store.getters.userWood)
     },
+    userFWW() {
+      return this.userTokens.length > 0 ? parseFloat((this.userTokens.find(token => token.balance.includes('FWW')).balance).replace(/[^\d.-]/g, '')) : 0
+    },
     userGold() {
       return parseInt(this.$store.getters.userGold)
+    },
+    userFWG() {
+      return this.userTokens.length > 0 ? parseFloat((this.userTokens.find(token => token.balance.includes('FWG')).balance).replace(/[^\d.-]/g, '')) : 0
     },
     userBarleys() {
       return this.$store.getters.userBarleys
@@ -275,7 +331,8 @@ export default {
           tokenQuantity,
           price: currentPrice,
           priceInUsd: Math.round(currentPrice * this.waxPrice * 100) / 100,
-          tradeUrl: 'https://wax.alcor.exchange/trade/fww-farmerstoken_wax-eosio.token'
+          tradeUrl: 'https://wax.alcor.exchange/trade/fww-farmerstoken_wax-eosio.token',
+          autoDeposit: this.autoDepositWood
         }
       } else if (this.currentDetails.name === 'FOOD') {
         const currentToken = this.marketPrices.find(pair => pair.quote_token.symbol.name === 'FWF')
@@ -294,7 +351,8 @@ export default {
           tokenQuantity,
           price: currentPrice,
           priceInUsd: Math.round(currentPrice * this.waxPrice * 100) / 100,
-          tradeUrl: 'https://wax.alcor.exchange/trade/fwf-farmerstoken_wax-eosio.token'
+          tradeUrl: 'https://wax.alcor.exchange/trade/fwf-farmerstoken_wax-eosio.token',
+          autoDeposit: this.autoDepositFood
         }
       } else if (this.currentDetails.name === 'GOLD') {
         const currentToken = this.marketPrices.find(pair => pair.quote_token.symbol.name === 'FWG')
@@ -313,7 +371,8 @@ export default {
           tokenQuantity,
           price: currentPrice,
           priceInUsd: Math.round(currentPrice * this.waxPrice * 100) / 100,
-          tradeUrl: 'https://wax.alcor.exchange/trade/fwg-farmerstoken_wax-eosio.token'
+          tradeUrl: 'https://wax.alcor.exchange/trade/fwg-farmerstoken_wax-eosio.token',
+          autoDeposit: this.autoDepositGold
         }
       } else if (this.currentDetails.name === 'FC') {
         const fcTemplateId = '260676'
@@ -328,6 +387,7 @@ export default {
           quantity: this.userFc,
           price: currentPrice,
           priceInUsd: Math.round(currentPrice * this.waxPrice * 100) / 100,
+          templateId: fcTemplateId,
           buyUrl: `https://wax.atomichub.io/market?collection_name=farmersworld&template_id=${fcTemplateId}&order=asc&sort=price&symbol=WAX`,
           sellUrl: `https://wax.atomichub.io/profile/${this.userAccount}?collection_name=farmersworld&order=desc&template_id=${fcTemplateId}&sort=transferred`
         }
@@ -456,6 +516,22 @@ export default {
       this.withdrawPercentage = 0
       this.depositPercentage = 0
       this.nbAssetsToBurn = 1
+      this.nbAssetsAutoBuy = 1
+    },
+    userFWF(newVal) {
+      if (this.autoDepositFood && newVal > 0) {
+        this.handleDeposit('FWF', newVal)
+      }
+    },
+    userFWW(newVal) {
+      if (this.autoDepositWood && newVal > 0) {
+        this.handleDeposit('FWW', newVal)
+      }
+    },
+    userFWG(newVal) {
+      if (this.autoDepositGold && newVal > 0) {
+        this.handleDeposit('FWG', newVal)
+      }
     }
   },
   mounted() {
@@ -465,12 +541,14 @@ export default {
     this.fetchUserTokens()
     this.$store.dispatch('getWaxPrice')
     this.$store.dispatch('getUserBalance')
+    this.$store.dispatch('getUserRessources')
     setInterval(() => {
       this.getMarketPrices()
       this.getAtomicPrices()
       this.fetchUserTokens()
       this.$store.dispatch('getWaxPrice')
       this.$store.dispatch('getUserBalance')
+      this.$store.dispatch('getUserRessources')
     }, 15000)
   },
   methods: {
@@ -613,7 +691,53 @@ export default {
         })
       }
     },
+    handleAutoDeposit(token) {
+      if (token === 'FWW') {
+        this.autoDepositWood = !this.autoDepositWood
+        localStorage.setItem('autoDepositWood', this.autoDepositWood)
+        if (this.autoDepositWood && this.userFWW > 0) {
+          this.handleDeposit('FWW', this.userFWW)
+        }
+      } else if (token === 'FWF') {
+        this.autoDepositFood = !this.autoDepositFood
+        localStorage.setItem('autoDepositFood', this.autoDepositFood)
+        if (this.autoDepositFood && this.userFWF > 0) {
+          this.handleDeposit('FWF', this.userFWF)
+        }
+      } else if (token === 'FWG') {
+        this.autoDepositGold = !this.autoDepositGold
+        localStorage.setItem('autoDepositGold', this.autoDepositGold)
+        if (this.autoDepositGold && this.userFWG > 0) {
+          this.handleDeposit('FWG', this.userFWG)
+        }
+      }
+    },
     async handleWithdrawal(ressourceName, quantity) {
+      if (quantity === 0) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Can\'t withdraw nothing',
+            message: 'Please enter the amount to be withdrawn'
+          }
+        })
+
+        return null
+      }
+
+      this.loading = true
+
+      if (ressourceName === 'WOOD' && this.autoDepositWood) {
+        this.autoDepositWood = false
+        localStorage.setItem('autoDepositWood', this.autoDepositWood)
+      } else if (ressourceName === 'FOOD' && this.autoDepositFood) {
+        this.autoDepositFood = false
+        localStorage.setItem('autoDepositFood', this.autoDepositFood)
+      } else if (ressourceName === 'GOLD' && this.autoDepositGold) {
+        this.autoDepositGold = false
+        localStorage.setItem('autoDepositGold', this.autoDepositGold)
+      }
+
       const quantityString = quantity.toFixed(4) + ' ' + ressourceName
       try {
         await this.wax.api.transact({
@@ -634,13 +758,46 @@ export default {
           blocksBehind: 3,
           expireSeconds: 30
         })
-      } catch (e) {}
+
+        this.$toast.success({
+          component: CustomNotification,
+          props: {
+            title: 'Withdrawal Success',
+            message: `You successfully withdrew ${(quantity * (1 - this.withdrawalFee / 100)).toFixed(4)} ${ressourceName} in your wallet`
+          }
+        })
+      } catch (e) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Unexpected error',
+            message: e.message
+          }
+        })
+      }
+
+      this.loading = false
+
       setTimeout(async () => {
         await this.fetchUserTokens()
         await this.$store.dispatch('getUserRessources')
-      }, 1000)
+      }, 1500)
     },
     async handleDeposit(ressourceName, quantity) {
+      if (quantity === 0) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Can\'t deposit nothing',
+            message: 'Please enter the amount to be deposited'
+          }
+        })
+
+        return null
+      }
+
+      this.loading = true
+
       const quantityString = quantity.toFixed(4) + ' ' + ressourceName
       try {
         await this.wax.api.transact({
@@ -662,14 +819,35 @@ export default {
           blocksBehind: 3,
           expireSeconds: 30
         })
-      } catch (e) {}
+
+        this.$toast.success({
+          component: CustomNotification,
+          props: {
+            title: 'Deposit Success',
+            message: `You successfully deposited ${quantityString} in game`
+          }
+        })
+      } catch (e) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Unexpected error',
+            message: e.message
+          }
+        })
+      }
+
+      this.loading = false
+
       setTimeout(async () => {
         await this.fetchUserTokens()
         await this.$store.dispatch('getUserRessources')
-      }, 1000)
+      }, 1500)
     },
 
     async handleBurnAssets(nbAssets, templateId) {
+      this.loading = true
+
       const userAssets = (await this.$axios.$get(`https://wax.api.atomicassets.io/atomicassets/v1/assets?collection_name=farmersworld&template_id=${templateId}&owner=${this.wax.userAccount}&limit=${nbAssets}&order=desc&sort=asset_id`)).data
       
       let sumRewards = 0
@@ -695,7 +873,17 @@ export default {
             blocksBehind: 3,
             expireSeconds: 30
           })
-          const nbRewards = res.processed.action_traces.filter(e => e.receiver === 'atomicassets')[0].inline_traces.filter(e => e.act.name === 'logburnrs')[0].act.data.rewards[0]
+
+          const transactionId = res.transaction_id
+
+          let nbRewards
+          try {
+            const result = await this.$axios.$get(`https://wax.eosphere.io/v2/history/get_transaction?id=${transactionId}`)
+            nbRewards = result.actions.find(e => e.act.name === 'logburnrs').act.data.rewards[0]
+          } catch {
+            nbRewards = res.processed.action_traces.filter(e => e.receiver === 'atomicassets')[0].inline_traces.filter(e => e.act.name === 'logburnrs')[0].act.data.rewards[0]
+          }
+          
           sumRewards += parseFloat(nbRewards.replace(/[^\d.-]/g, ''))
         } catch (e) {
           this.$toast.error({
@@ -718,9 +906,187 @@ export default {
         })
       }
 
+      this.loading = false
+
       setTimeout(async () => {
         await this.$store.dispatch('getUserRessources')
-      }, 1000)
+      }, 1500)
+    },
+
+    async handleAutoBuyAssets(nbAssets, templateId) {
+      this.loading = true
+
+      let sales
+      try {
+        sales = await this.$axios.$get(`https://wax.api.atomicassets.io/atomicmarket/v1/sales?state=1&max_assets=1&collection_name=farmersworld&template_id=${templateId}&limit=${nbAssets}&order=asc&sort=price`)
+      } catch (e) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: 'Unexpected error',
+            message: e.message
+          }
+        })
+        this.loading = false
+        return null
+      }
+
+      sales = sales.data
+
+      let nbBoughtAssets = 0
+      let totalCost = 0
+      let nbErrors = 0
+
+      for (const sale of sales) {
+        if (parseInt(sale.price.amount) > 1.10 * parseInt(sales[0].price.amount)) {
+          this.$toast.error({
+            component: CustomNotification,
+            props: {
+              title: `Price has exceeded the lowest listing price by 10%`,
+              message: 'Please try again'
+            }
+          })
+          break
+        }
+
+        const res = await this.buyAssetAH(sale)
+
+        if (res) {
+          nbBoughtAssets++
+          totalCost += parseInt(sale.price.amount)
+          this.$toast.success({
+            component: CustomNotification,
+            props: {
+              title: `Successfully bought 1 ${sales[0].assets[0].name}`,
+              message: `For a price of ${(parseInt(sale.price.amount) * 10**(-sale.price.token_precision)).toFixed(3)} WAX`
+            }
+          })
+        } else {
+          nbErrors++
+        }
+      }
+
+      const totalPriceWax = totalCost * 10**(sales[0].price.token_precision * -1)
+      const totalPriceUsd = totalPriceWax * this.waxPrice
+      const avgPriceWax = totalPriceWax / nbBoughtAssets
+      const avgPriceUsd = avgPriceWax * this.waxPrice
+
+      if (nbBoughtAssets > 0) {
+        this.$toast.success({
+          component: CustomNotification,
+          props: {
+            title: `Successfully bought ${nbBoughtAssets} ${sales[0].assets[0].name}${nbBoughtAssets > 1 ? 's' : ''} for ${totalPriceWax.toFixed(3)} WAX ($${totalPriceUsd.toFixed(2)})`,
+            message: `For an average price of ${avgPriceWax.toFixed(3)} WAX ($${avgPriceUsd.toFixed(2)}) per item`
+          }
+        })
+      }
+
+      if (nbErrors > 0) {
+        this.$toast.error({
+          component: CustomNotification,
+          props: {
+            title: `Problem with ${nbErrors} sales`,
+            message: 'Please try again'
+          }
+        })
+      }
+
+      this.loading = false
+
+      setTimeout(() => {
+        this.$store.dispatch('getUserRessources')
+        this.$store.dispatch('getUserBalance')
+      }, 1500)
+    },
+    async buyAssetAH(sale) {
+      const saleId = sale.sale_id
+      const assetIdsToAssert = [sale.assets[0].asset_id]
+      const tokenPrecision = sale.listing_symbol === 'USD' ? 2 : 8
+      const listingPriceToAssertOne = (parseInt(sale.listing_price) * 10**(-tokenPrecision)).toFixed(tokenPrecision) + ' ' + sale.listing_symbol
+      const listingPriceToAssertTwo = (parseInt(sale.price.amount) * 10**(-sale.price.token_precision)).toFixed(sale.price.token_precision) + ' ' + sale.price.token_symbol
+      const settlementSymbolToAssert = '8,WAX'
+      let intendedDelphiMedian = 0
+
+      if (sale.listing_symbol !== 'WAX') {
+        const delphiMedian = await this.$axios.$post('https://chain.wax.io/v1/chain/get_table_rows', {
+          json: true,
+          code: "delphioracle",
+          scope: "waxpusd",
+          table: "datapoints",
+          limit: "100",
+        })
+
+        const delphiMedianTimestamps = delphiMedian.rows.map(delphi => Date.parse(delphi.timestamp))
+        const maxTimestamp = Math.max(...delphiMedianTimestamps)
+        const newestDelphiMedian = delphiMedian.rows.find(delphi => Date.parse(delphi.timestamp) === maxTimestamp)
+
+        intendedDelphiMedian = newestDelphiMedian.median
+      }
+
+      try {
+        await this.wax.api.transact({
+          actions: [{
+            account: 'atomicmarket',
+            name: 'assertsale',
+            authorization: [{
+              actor: this.wax.userAccount,
+              permission: 'active',
+            }],
+            data: {
+              sale_id: saleId,
+              asset_ids_to_assert: assetIdsToAssert,
+              listing_price_to_assert: listingPriceToAssertOne,
+              settlement_symbol_to_assert: settlementSymbolToAssert,
+            },
+          }]
+        }, {
+          blocksBehind: 3,
+          expireSeconds: 30
+        })
+        
+        await this.wax.api.transact({
+          actions: [{
+            account: 'eosio.token',
+            name: 'transfer',
+            authorization: [{
+              actor: this.wax.userAccount,
+              permission: 'active',
+            }],
+            data: {
+              from: this.wax.userAccount,
+              to: 'atomicmarket',
+              quantity: listingPriceToAssertTwo,
+              memo: 'deposit',
+            },
+          }]
+        }, {
+          blocksBehind: 3,
+          expireSeconds: 30
+        })
+
+        await this.wax.api.transact({
+          actions: [{
+            account: 'atomicmarket',
+            name: 'purchasesale',
+            authorization: [{
+              actor: this.wax.userAccount,
+              permission: 'active',
+            }],
+            data: {
+              buyer: this.wax.userAccount,
+              sale_id: saleId,
+              intended_delphi_median: intendedDelphiMedian,
+              taker_marketplace: '',
+            },
+          }]
+        }, {
+          blocksBehind: 3,
+          expireSeconds: 30
+        })
+        return true
+      } catch(e) {
+        return false
+      }
     },
 
     handleEnableAnimations() {
@@ -762,5 +1128,9 @@ export default {
   .rssdetail {
     display: grid;
     grid-template-rows: auto 1fr auto;
+  }
+
+  .loader {
+    bottom: 0.75rem!important;
   }
 </style>

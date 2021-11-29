@@ -23,12 +23,10 @@ export default {
     }
   },
   mounted() {
-    this.$store.dispatch('getUserRessources')
     this.$store.dispatch('getUserTools')
     this.$store.dispatch('getUserMbs')
 
     setInterval(() => {
-      this.$store.dispatch('getUserRessources')
       this.$store.dispatch('getUserTools')
       this.$store.dispatch('getUserMbs')
       this.$store.dispatch('getUserCrops')
