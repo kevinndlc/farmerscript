@@ -44,6 +44,11 @@ export default {
         'https://wax.cryptolions.io',
         'https://api-wax.eosauthority.com',
         'https://wax.greymass.com'
+        'https://wax.alohaeos.com'
+        'https://wax.waxsweden.com'
+        'https://wax.pink.com'
+        'https://wax.dapplica.com'
+        'https://wax.eosphere.com'
       ],
       favoriteRpc: localStorage.getItem('favoriteRpc') ? localStorage.getItem('favoriteRpc') : 'https://api.wax.greeneosio.com'
     }
