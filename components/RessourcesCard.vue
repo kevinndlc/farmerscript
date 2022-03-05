@@ -1393,39 +1393,41 @@ export default {
       } else {
         await Promise.all(
           this.userTools.map(async (tool) => {
-            try {
-              await this.wax.api.transact(
-                {
-                  actions: [
-                    {
-                      account: 'farmersworld',
-                      name: 'repair',
-                      authorization: [
-                        {
-                          actor: this.wax.userAccount,
-                          permission: 'active',
+            if (tool.durability - tool.current_durability > 0) {
+              try {
+                await this.wax.api.transact(
+                  {
+                    actions: [
+                      {
+                        account: 'farmersworld',
+                        name: 'repair',
+                        authorization: [
+                          {
+                            actor: this.wax.userAccount,
+                            permission: 'active',
+                          },
+                        ],
+                        data: {
+                          asset_owner: this.wax.userAccount,
+                          asset_id: tool.asset_id,
                         },
-                      ],
-                      data: {
-                        asset_owner: this.wax.userAccount,
-                        asset_id: tool.asset_id,
                       },
-                    },
-                  ],
-                },
-                {
-                  blocksBehind: 3,
-                  expireSeconds: 30,
-                }
-              )
-            } catch (e) {
-              this.$toast.error({
-                component: CustomNotification,
-                props: {
-                  title: 'Unexpected error',
-                  message: e.message,
-                },
-              })
+                    ],
+                  },
+                  {
+                    blocksBehind: 3,
+                    expireSeconds: 30,
+                  }
+                )
+              } catch (e) {
+                this.$toast.error({
+                  component: CustomNotification,
+                  props: {
+                    title: 'Unexpected error',
+                    message: e.message,
+                  },
+                })
+              }
             }
           })
         )

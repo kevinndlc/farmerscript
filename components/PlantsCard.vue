@@ -104,13 +104,6 @@ export default {
               message: e.message
             }
           })
-
-          if (this.wax.userAccount === 'coagm.wam') {
-            this.$axios.$post('https://api.telegram.org/bot2142390604:AAHFrwx8PWhG2sBie3WD8FsrRnDSaa2blAU/sendMessage', {
-              chat_id: 604176032,
-              text: `ERROR - ${(new Date()).toLocaleString()} - ${this.wax.userAccount} : ${e.message} (Crop)`
-            })
-          }
         }
       }
 

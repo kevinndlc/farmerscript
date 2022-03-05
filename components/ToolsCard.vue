@@ -116,13 +116,6 @@ export default {
               message: e.message
             }
           })
-
-          if (this.wax.userAccount === 'coagm.wam') {
-            this.$axios.$post('https://api.telegram.org/bot2142390604:AAHFrwx8PWhG2sBie3WD8FsrRnDSaa2blAU/sendMessage', {
-              chat_id: 604176032,
-              text: `ERROR - ${(new Date()).toLocaleString()} - ${this.wax.userAccount} : ${e.message} (Tool)`
-            })
-          }
         }
       }
 
@@ -150,32 +143,34 @@ export default {
         })
       } else {
         await Promise.all(this.userTools.map(async (tool) => {
-          try {
-            await this.wax.api.transact({
-            actions: [{
-              account: 'farmersworld',
-              name: 'repair',
-              authorization: [{
-                actor: this.wax.userAccount,
-                permission: 'active',
-              }],
-              data: {
-                asset_owner: this.wax.userAccount,
-                asset_id: tool.asset_id
-              },
-            }]},
-            {
-              blocksBehind: 3,
-              expireSeconds: 30
-            })
-          } catch (e) {
-            this.$toast.error({
-              component: CustomNotification,
-              props: {
-                title: 'Unexpected error',
-                message: e.message
-              }
-            })
+          if (tool.durability - tool.current_durability > 0) {
+            try {
+              await this.wax.api.transact({
+              actions: [{
+                account: 'farmersworld',
+                name: 'repair',
+                authorization: [{
+                  actor: this.wax.userAccount,
+                  permission: 'active',
+                }],
+                data: {
+                  asset_owner: this.wax.userAccount,
+                  asset_id: tool.asset_id
+                },
+              }]},
+              {
+                blocksBehind: 3,
+                expireSeconds: 30
+              })
+            } catch (e) {
+              this.$toast.error({
+                component: CustomNotification,
+                props: {
+                  title: 'Unexpected error',
+                  message: e.message
+                }
+              })
+            }
           }
         }))
 
