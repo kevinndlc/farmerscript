@@ -8,7 +8,7 @@
         <div v-if="slide.times_claimed >= 0" class="absolute w-full top-4 font-medium text-gray-600 text-center cursor-pointer">
           {{ slide.times_claimed }}/{{ slide.required_claims }}
         </div>
-        <img :data-index="index" :class="[{ current: isCurrent, onLeft: (leftIndex >= 0), onRight: (rightIndex >= 0)}, 'cursor-pointer']" :src="slide.img_url">
+        <img :data-index="index" :class="[{ current: isCurrent, onLeft: (leftIndex >= 0), onRight: (rightIndex >= 0)}, 'cursor-pointer']" :src="slide.img_url" referrerpolicy="no-referrer">
         <Counter v-show="isCurrent" :timestamp="slide.next_availability" :autoclaim="autoclaim" :waitingSeconds="i" @claimed="handleClaim(slide)"/>
       </template>
     </slide>

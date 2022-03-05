@@ -16,6 +16,7 @@ const createStore = () => {
       userMbs: [],
       userCrops: [],
       userAnimals: [],
+      userBuildings: [],
       animations: false
     },
     mutations: {
@@ -53,6 +54,10 @@ const createStore = () => {
       setUserAnimals(state, animals) {
         state.userAnimals = animals
       },
+      setUserBuildings(state, buildings) {
+        state.userBuildings = buildings
+      },
+
       setAnimations(state, animations) {        
         state.animations = animations
       }
@@ -221,7 +226,7 @@ const createStore = () => {
         tools.forEach(tool => {
           const toolConf = toolConfs.find(toolConf => toolConf.template_id === tool.template_id)
           tool.name = toolConf.template_name
-          tool.img_url = 'https://mypinata.cloud/ipfs/' + toolConf.img
+          tool.img_url = 'https://ipfs.atomichub.io/ipfs/' + toolConf.img
         });
 
         commit('setUserTools', tools)
@@ -262,7 +267,7 @@ const createStore = () => {
         mbs.forEach(mb => {
           const mbsConf = mbsConfs.find(mbConf => mbConf.template_id === mb.template_id)
           mb.name = `${mbsConf.name} (${mbsConf.type})`
-          mb.img_url = 'https://mypinata.cloud/ipfs/' + mbsConf.img
+          mb.img_url = 'https://ipfs.atomichub.io/ipfs/' + mbsConf.img
         });
 
         commit('setUserMbs', mbs)
@@ -302,7 +307,7 @@ const createStore = () => {
         crops.forEach(crop => {
           const cropConf = cropConfs.find(cropConf => cropConf.template_id === crop.template_id)
           crop.name = cropConf.name
-          crop.img_url = 'https://mypinata.cloud/ipfs/' + cropConf.img
+          crop.img_url = 'https://ipfs.atomichub.io/ipfs/' + cropConf.img
           crop.required_claims = cropConf.required_claims
         });
 
@@ -345,7 +350,7 @@ const createStore = () => {
         animals.forEach(animal => {
           const animalConf = animalConfs.find(animalConf => animalConf.template_id === animal.template_id)
           animal.name = animalConf.name
-          animal.img_url = 'https://mypinata.cloud/ipfs/' + animalConf.img
+          animal.img_url = 'https://ipfs.atomichub.io/ipfs/' + animalConf.img
           animal.required_claims = animalConf.required_claims
           animal.consumed_card = animalConf.consumed_card
           animal.consumed_card_name = animalConf.consumed_card === 0 ? '' : (fwTemplates.find(tpl => tpl.template_id === animal.consumed_card.toString())).name
@@ -362,6 +367,49 @@ const createStore = () => {
 
         commit('setUserAnimals', animals)
       },
+      async getUserBuildings({ commit, getters }) {
+        const buildingsData = await this.$axios.$post('https://chain.wax.io/v1/chain/get_table_rows', {
+          json: true,
+          code: "farmersworld",
+          scope: "farmersworld",
+          table: "buildings",
+          lower_bound: getters.userAccount,
+          upper_bound: getters.userAccount,
+          index_position: 2,
+          key_type: "i64",
+          limit: "100",
+          reverse: false,
+          show_payer: false
+        })
+
+        const buildingConfsData = await this.$axios.$post('https://chain.wax.io/v1/chain/get_table_rows', {
+          json: true,
+          code: "farmersworld",
+          scope: "farmersworld",
+          table: "bldconf",
+          lower_bound: "",
+          upper_bound: "",
+          index_position: 1,
+          key_type: "",
+          limit: "100",
+          reverse: false,
+          show_payer: false
+        })
+
+        const buildings = buildingsData.rows
+        const buildingConfs = buildingConfsData.rows
+
+        buildings.forEach(building => {
+          const buildingConf = buildingConfs.find(buildingConf => buildingConf.template_id === building.template_id)
+          building.name = buildingConf.name
+          building.img_url = 'https://ipfs.atomichub.io/ipfs/' + buildingConf.img
+          building.nb_slots = buildingConf.num_slots
+          building.required_claims = buildingConf.required_claims
+        });
+
+        commit('setUserBuildings', buildings)
+      },
+
       setAnimations({ commit }, animations) {
         commit('setAnimations', animations)
       }
@@ -485,6 +533,20 @@ const createStore = () => {
           return parseInt(MilkRss.replace(/[^\d.-]/g, ''))
         } else {
           return 0
+        }
+      },
+      userFarmPlots(state) {
+        if (state.userBuildings) {
+          const farmPlots = state.userBuildings.filter(bld => bld.template_id === 298592)
+          if (!farmPlots) {
+            return []
+          }
+          farmPlots.forEach(farmPlot => {
+            farmPlot.remaining_slots = farmPlot.nb_slots - farmPlot.slots_used
+          })
+          return farmPlots
+        } else {
+          return []
         }
       }
     }

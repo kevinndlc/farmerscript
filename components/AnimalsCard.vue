@@ -72,7 +72,41 @@ export default {
         let usedFoodAssetsId
         try {
           if (asset.consumed_card === 0) {
-            console.log('NEED TO KNOW WHAT TO DO');
+            await this.wax.api.transact({
+            actions: [{
+              account: 'farmersworld',
+              name: 'anmclaim',
+              authorization: [{
+                actor: this.wax.userAccount,
+                permission: 'active',
+              }],
+              data: {
+                animal_id: asset.asset_id,
+                owner: this.wax.userAccount
+              },
+            }]},
+            {
+              blocksBehind: 3,
+              expireSeconds: 30
+            })
+
+            if (asset.times_claimed === asset.required_claims - 1) {
+              this.$toast.success({
+                component: CustomNotification,
+                props: {
+                  title: `Successfully claimed your ${asset.name}`,
+                  message: `It has just grown`
+                }
+              })
+            } else {
+              this.$toast.success({
+                component: CustomNotification,
+                props: {
+                  title: `Successfully claimed your ${asset.name}`,
+                  message: `It needs to be claimed ${asset.required_claims - (asset.times_claimed + 1)} more times`
+                }
+              })
+            }
           } else {
             const userFoodAssets = (await this.$axios.$get(`https://wax.api.atomicassets.io/atomicassets/v1/assets?collection_name=farmersworld&template_id=${asset.consumed_card}&owner=${this.wax.userAccount}&limit=100&order=desc&sort=asset_id`)).data
             
