@@ -11,6 +11,11 @@ export default {
     userAccount() {
       return this.$store.state.userAccount
     }
-  }
+  },
+  mounted() {
+    setTimeout(() => {
+      location.reload()
+    }, 20 * 60 * 1000);
+  },
 }
 </script>

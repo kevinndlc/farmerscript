@@ -23,19 +23,42 @@
               >Balance: {{ userBalance }} WAX (${{ userBalanceInUsd }})</span
             >
           </div>
-          <div
-            class="
-              hidden
-              md:inline-block
-              bg-primary
-              rounded-lg
-              py-2
-              px-3
-              text-white
-              font-medium
-            "
-          >
-            CPU: {{ userCpuPercentage }}%
+          <div>
+            <div
+              class="
+                hidden
+                md:inline-block
+                bg-primary
+                rounded-lg
+                py-2
+                px-3
+                text-white
+                font-medium
+              "
+            >
+              CPU: {{ userCpuPercentage }}%
+            </div>
+            <button
+              class="
+                whitespace-nowrap
+                inline-flex
+                items-center
+                justify-center
+                px-4
+                py-2
+                border border-transparent
+                rounded-md
+                shadow-sm
+                text-base
+                font-medium
+                text-white
+                bg-red-500
+                hover:bg-red-700
+              "
+              @click="handleLogout"
+            >
+              Log out
+            </button>
           </div>
         </div>
         <hr class="my-3 sm:mb-0" />
@@ -254,7 +277,6 @@
           >
           <span>on AtomicHub</span>
           <div
-            v-if="userAccount === 'coagm.wam' || userAccount === 'spkvu.wam'"
             class="mt-4"
           >
             <span>Buy</span>
@@ -430,7 +452,6 @@
             <span>on AtomicHub</span>
           </div>
           <div
-            v-if="userAccount === 'coagm.wam' || userAccount === 'spkvu.wam'"
             class="mt-4"
           >
             <span>Buy</span>
@@ -892,6 +913,7 @@ export default {
       autoRecover: localStorage.getItem('autoRecover') === 'true',
       autoRepairTools: localStorage.getItem('autoRepair') === 'true',
       enableAnimations: localStorage.getItem('enableAnimations') === 'true',
+      autoLogin: localStorage.getItem('autoLogin') === 'true',
       autoDepositWood: localStorage.getItem('autoDepositWood') === 'true',
       autoDepositFood: localStorage.getItem('autoDepositFood') === 'true',
       autoDepositGold: localStorage.getItem('autoDepositGold') === 'true',
@@ -2067,6 +2089,10 @@ export default {
         'https://wax.api.atomicassets.io/atomicmarket/v1/sales/templates?symbol=WAX&collection_name=farmersworld&page=1&limit=100&order=desc&sort=price'
       )
     },
+    handleLogout() {
+      localStorage.setItem('autoLogin', false)
+      location.reload();
+    }
   },
 }
 </script>

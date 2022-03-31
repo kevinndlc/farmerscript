@@ -71,6 +71,7 @@ import CustomNotification from '~/components/CustomNotification.vue'
 export default {
   data() {
     return {
+      autoLogin: localStorage.getItem('autoLogin') === 'true',
       showRessources: false,
       rpcList: [
         'https://chain.wax.io',
@@ -116,13 +117,16 @@ export default {
       return this.userRessources.max_energy - this.userRessources.energy
     },
     showRessourcesText() {
-      return this.showRessources ? 'Close' : this.userAccount
+      return this.showRessources ? 'Close' : 'My account'
     },
   },
   watch: {
     favoriteRpc(newVal) {
       localStorage.setItem('favoriteRpc', newVal)
     },
+  },
+  async mounted() {
+    if (this.autoLogin) await this.handleLogin()
   },
   methods: {
     async handleLogin() {

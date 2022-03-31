@@ -1,6 +1,9 @@
 <template>
   <div>
-    <DisabledButton v-if="!readyToClaim" class="block w-full mt-2" disabled>
+    <PrimaryButton v-if="firstClaimReady" class="block w-full mt-2" @click='handleClaim'>
+      {{ remainingTime }}
+    </PrimaryButton>
+    <DisabledButton v-else-if="!readyToClaim" class="block w-full mt-2" disabled>
       {{ remainingTime }}
     </DisabledButton>
     <PrimaryButton v-else class="block w-full mt-2" @click='handleClaim'>
@@ -20,15 +23,16 @@ export default {
       type: Boolean,
       default: false
     },
-    waitingSeconds: {
+    addedTimestamp: {
       type: Number,
-      default: 1
+      default: 0
     }
   },
   data() {
     return {
       loaded: false,
       readyToClaim: false,
+      firstClaimReady: false,
       displayHours: 0,
       displayMinutes: 0,
       displaySeconds: 0
@@ -57,6 +61,7 @@ export default {
     timestamp: function() {
       this.loaded = false
       this.readyToClaim = false
+      this.firstClaimReady = false
       this.showRemaining()
     },
     // eslint-disable-next-line object-shorthand
@@ -64,6 +69,7 @@ export default {
       if (this.autoclaim) {
         this.loaded = false
         this.readyToClaim = false
+        this.firstClaimReady = false
         this.showRemaining()
       }
     }
@@ -75,37 +81,37 @@ export default {
     showRemaining() {
       const timer = setInterval(() => {
         const now = new Date()
-        const end = new Date(this.timestamp * 1000)
+        const readyToClaimTs = new Date(this.timestamp * 1000)
+        const end = new Date((this.timestamp + this.addedTimestamp) * 1000)
         const distance = end.getTime() - now.getTime()
+        const distanceBetweenFirstClaim = readyToClaimTs.getTime() - now.getTime()
+
 
         if (distance <= 0) {
-        clearInterval(timer)
-        this.readyToClaim = true
-        this.loaded = true
-        if (this.autoclaim) {
-          this.handleClaim()
+          clearInterval(timer)
+          this.readyToClaim = true
+          this.loaded = true
+          if (this.autoclaim) {
+            this.handleClaim()
+          }
+          return null
         }
-        return null
-      }
 
-      const hours = Math.floor(distance / this._hours)
-      const minutes = Math.floor((distance % this._hours) / this._minutes)
-      const seconds = Math.floor((distance % this._minutes) / this._seconds)
-      this.displayHours = hours < 10 ? '0' + hours : hours
-      this.displayMinutes = minutes < 10 ? '0' + minutes : minutes
-      this.displaySeconds = seconds < 10 ? '0' + seconds : seconds
+        if (distanceBetweenFirstClaim <= 0 && !this.firstClaimReady) {
+          this.firstClaimReady = true
+        }
 
-      this.loaded = true
+        const hours = Math.floor(distance / this._hours)
+        const minutes = Math.floor((distance % this._hours) / this._minutes)
+        const seconds = Math.floor((distance % this._minutes) / this._seconds)
+        this.displayHours = hours < 10 ? '0' + hours : hours
+        this.displayMinutes = minutes < 10 ? '0' + minutes : minutes
+        this.displaySeconds = seconds < 10 ? '0' + seconds : seconds
+
+        this.loaded = true
       }, 1000)
     },
     handleClaim() {
-      // if (this.autoclaim) {
-      //   setTimeout(() => {
-      //     this.$emit('claimed')
-      //   }, this.waitingSeconds * 1000)
-      // } else {
-      //   this.$emit('claimed')
-      // }
       this.$emit('claimed')
     }
   },

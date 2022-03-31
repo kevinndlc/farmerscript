@@ -44,9 +44,19 @@ export default {
       this.userTools.forEach(tool => (sum += tool.durability - tool.current_durability))
 
       return sum
+    },
+    woodSavedClaims() {
+      return this.$store.getters.woodSavedClaims
+    },
+    foodSavedClaims() {
+      return this.$store.getters.foodSavedClaims
+    },
+    goldSavedClaims() {
+      return this.$store.getters.goldSavedClaims
     }
   },
   async mounted() {
+    await this.$store.dispatch('getUserMbs')
     await this.$store.dispatch('getUserTools')
   },
   methods: {
